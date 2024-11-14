@@ -11,5 +11,4 @@ def init_env_values():
     CLIENT_HOST = env_values["CLIENT_HOST"]
     BUFFER_SIZE = int(env_values["BUFFER_SIZE"])
     ENCODING = env_values["ENCODING"]
-    print("ok")
     logging.info("Environment variables loaded into global variables.")
