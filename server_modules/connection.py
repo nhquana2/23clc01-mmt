@@ -1,4 +1,4 @@
-from socket import AF_INET, socket, SOCK_STREAM
+import socket
 from threading import Thread
 import time
 import globals
@@ -12,7 +12,7 @@ logging.basicConfig(level = logging.INFO)
 def create_server(host, port):
     """Creates a server socket."""
     try:
-        server = socket(AF_INET, SOCK_STREAM)
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind((host, port))
         server.listen(5)
         return server
@@ -26,7 +26,7 @@ def create_server(host, port):
 def accept_incoming_connections(server, clients, buffer_size, encoding):
     while True:
         client, client_address = server.accept()
-        print("%s:%s has connected to the server." % client_address)
+        logging.info("(%s:%s) has connected to the server." % client_address)
         #client.send(bytes("Please enter your name: ", encoding))
         clientThread = Thread(target=handle_client, args=(client, client_address, buffer_size, clients, encoding))
         clientThread.daemon = True
