@@ -3,6 +3,7 @@ config = globals.config
 utils = globals.utils
 import time
 from client_modules.connection import *
+from globals.utils import *
 
 import logging
 logging.basicConfig(level = logging.INFO)
@@ -14,6 +15,9 @@ def main():
         print("Client could not connect to the server. Program terminated.")
         return
     logging.info("Client is connected to %s:%s" % (config.SERVER_HOST, config.SERVER_PORT))
+
+    to_send = input()
+    send_data(CLIENT, to_send.encode())
 
     """while True:
         #command 1: upload <file_path>
