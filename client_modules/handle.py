@@ -8,6 +8,8 @@ import socket
 import os
 from threading import Thread
 
+from globals.utils import *
+
 SERVER_HOST=config.SERVER_HOST
 SERVER_PORT=config.SERVER_PORT
 BUFFER_SIZE=config.BUFFER_SIZE
@@ -18,27 +20,27 @@ def upload_file(filename, client_socket):
         print(f"File '{filename}' not found!")
         return
     try:
-        client_socket.send("UPLOAD".encode(ENCODING))
-        client_socket.send(filename.encode(ENCODING))
+        send_data(client_socket, "UPLOAD".encode(ENCODING))
+        send_data(client_socket, filename.encode(ENCODING))
         file_size = os.path.getsize(filename)
-        client_socket.send(str(file_size).encode(ENCODING))
+        send_data(client_socket, str(file_size).encode(ENCODING))
 
         with open(filename, "rb") as f:
             bytes_sent = 0
             while bytes_sent < file_size:
                 data = f.read(BUFFER_SIZE)
-                client_socket.sendall(data)
+                send_data(client_socket, data)
                 bytes_sent += len(data)
-        response = client_socket.recv(BUFFER_SIZE).decode(ENCODING)
+        response = recv_data(client_socket).decode(ENCODING)
         print(f"\n[+] {response}")
     except Exception as e:
         print(f"An error occurred during file upload: {e}")
 
 def download_file(filename, client_socket):
     try:
-        client_socket.send("DOWNLOAD".encode(ENCODING))
-        client_socket.send(filename.encode(ENCODING))
-        response = client_socket.recv(BUFFER_SIZE).decode(ENCODING)
+        send_data(client_socket, "DOWNLOAD".encode(ENCODING))
+        send_data(client_socket, filename.encode(ENCODING))
+        response = recv_data(client_socket).decode(ENCODING)
         if response == "FILE NOT FOUND":
             print(f"File '{filename}' not found on server.")
         else:
@@ -46,7 +48,7 @@ def download_file(filename, client_socket):
             with open(f"downloaded_{filename}", "wb") as f:
                 bytes_received = 0
                 while bytes_received < file_size:
-                    data = client_socket.recv(BUFFER_SIZE)
+                    data = recv_data(client_socket)
                     if not data:
                         break
                     f.write(data)

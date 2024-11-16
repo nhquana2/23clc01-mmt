@@ -6,40 +6,44 @@ import logging
 logging.basicConfig(level = logging.INFO)
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
 
+from globals.utils import *
+
 """Handles a single client connection."""
 def handle_client(client_socket, client_address, buffer_size, encoding):
     logging.info(f"[+] Client {client_address} connected.")
     try:
         while True:
-            command = client_socket.recv(buffer_size).decode(encoding)
+            print("before command recv")
+            command = recv_data(client_socket).decode(encoding)
             if command == 'UPLOAD':
-                filename = client_socket.recv(buffer_size).decode(encoding)
-                file_size = int(client_socket.recv(buffer_size).decode(encoding))
+                filename = recv_data(client_socket).decode(encoding)
+                file_size = int(recv_data(client_socket).decode(encoding))
                 file_path = os.path.join(UPLOAD_FOLDER, filename) 
                 
                 with open(file_path, "wb") as f:
                     bytes_read = 0
                     while bytes_read < file_size:
-                        data = client_socket.recv(min(buffer_size, file_size - bytes_read))
+                        data = recv_data(client_socket)
                         if not data:
                             break
                         f.write(data)
                         bytes_read += len(data)
                 logging.info(f"[+] Received file {filename} from {client_address} and saved to {UPLOAD_FOLDER}.")
                 #client_socket.send(f"File {filename} uploaded successfully.".encode(encoding))
+                send_data(client_socket, f"File {filename} uploaded successfully.".encode(encoding))
 
             elif command == 'DOWNLOAD':
-                filename = client_socket.recv(buffer_size).decode(encoding)
+                filename = recv_data(client_socket).decode(encoding)
                 file_path = os.path.join(UPLOAD_FOLDER, filename)
                 if os.path.exists(file_path):
                     file_size = os.path.getsize(file_path)
-                    client_socket.send(str(file_size).encode(encoding))
+                    send_data(client_socket, str(file_size).encode(encoding))
                     with open(file_path, "rb") as f:
                         while (data := f.read(buffer_size)):
-                            client_socket.sendall(data)
+                            send_data(client_socket, data)
                     logging.info(f"[+] Sent file {filename} to {client_address}.")
                 else:
-                    client_socket.send("FILE NOT FOUND".encode(encoding))
+                    send_data(client_socket, "FILE NOT FOUND".encode(encoding))
             
             elif command == 'EXIT':
                 logging.info(f"[-] Client {client_address} disconnected.")
