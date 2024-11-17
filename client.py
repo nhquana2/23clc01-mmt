@@ -23,13 +23,7 @@ client_socket.connect((SERVER_HOST, SERVER_PORT))
 
 def main():
     while True:
-        command = input("Enter command (upload <filename> or download <filename>): ").strip()
-        if command == "exit":
-            client_socket.send("EXIT".encode(ENCODING))
-            print("Disconnected from server.")
-            break
-        else:
-           client_modules.handle.handle_command(command, client_socket)
+           client_modules.handle.handle_command(client_socket)
 
     client_socket.close()
 

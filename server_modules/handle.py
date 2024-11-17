@@ -3,6 +3,7 @@ from .utilities import *
 from globals.utils import *
 from threading import Thread
 import logging
+from alive_progress import *
 logging.basicConfig(level = logging.INFO)
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
 
@@ -13,7 +14,7 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
     logging.info(f"[+] Client {client_address} connected.")
     try:
         while True:
-            print("before command recv")
+            # print("before command recv")
             command = recv_data(client_socket).decode(encoding)
             if command == 'UPLOAD':
                 filename = recv_data(client_socket).decode(encoding)
@@ -22,12 +23,14 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                 
                 with open(file_path, "wb") as f:
                     bytes_read = 0
-                    while bytes_read < file_size:
-                        data = recv_data(client_socket)
-                        if not data:
-                            break
-                        f.write(data)
-                        bytes_read += len(data)
+                    with alive_bar(file_size, title=f"Receiving {filename}") as bar:
+                        while bytes_read < file_size:
+                            data = recv_data(client_socket)
+                            if not data:
+                                break
+                            f.write(data)
+                            bytes_read += len(data)
+                            bar(len(data))
                 logging.info(f"[+] Received file {filename} from {client_address} and saved to {UPLOAD_FOLDER}.")
                 #client_socket.send(f"File {filename} uploaded successfully.".encode(encoding))
                 send_data(client_socket, f"File {filename} uploaded successfully.".encode(encoding))
@@ -39,8 +42,10 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                     file_size = os.path.getsize(file_path)
                     send_data(client_socket, str(file_size).encode(encoding))
                     with open(file_path, "rb") as f:
-                        while (data := f.read(buffer_size)):
-                            send_data(client_socket, data)
+                        with alive_bar(file_size, title=f"Sending {filename}") as bar:
+                            while (data := f.read(buffer_size)):
+                                send_data(client_socket, data)
+                                bar(len(data))
                     logging.info(f"[+] Sent file {filename} to {client_address}.")
                 else:
                     send_data(client_socket, "FILE NOT FOUND".encode(encoding))
