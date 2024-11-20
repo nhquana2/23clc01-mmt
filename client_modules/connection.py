@@ -4,8 +4,7 @@ import time
 import globals
 config = globals.config
 
-import logging
-logging.basicConfig(level = logging.INFO)
+from globals.logger import *
 
 """Connects to a server socket."""
 def connect_server(host, port):
@@ -14,8 +13,8 @@ def connect_server(host, port):
         client.connect((host, port))
         return client
     except socket.error as e:
-        logging.error("Socket error: %s", e)
+        logger.error("Socket error: %s", e)
         return None
     except Exception as e:
-        logging.error("General error: %s", e)
+        logger.error("General error: %s", e)
         return None

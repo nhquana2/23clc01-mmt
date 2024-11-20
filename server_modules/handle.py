@@ -2,16 +2,16 @@ import socket
 from .utilities import *
 from globals.utils import *
 from threading import Thread
-import logging
 from alive_progress import *
-logging.basicConfig(level = logging.INFO)
+from globals.logger import *
+
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
 
 from globals.utils import *
 
 """Handles a single client connection."""
 def handle_client(client_socket, client_address, buffer_size, encoding):
-    logging.info(f"[+] Client {client_address} connected.")
+    logger.info(f"[+] Client {client_address} connected.")
     try:
         while True:
             # print("before command recv")
@@ -31,7 +31,7 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                             f.write(data)
                             bytes_read += len(data)
                             bar(len(data))
-                logging.info(f"[+] Received file {filename} from {client_address} and saved to {UPLOAD_FOLDER}.")
+                logger.info(f"[+] Received file {filename} from {client_address} and saved to {UPLOAD_FOLDER}.")
                 #client_socket.send(f"File {filename} uploaded successfully.".encode(encoding))
                 send_data(client_socket, f"File {filename} uploaded successfully.".encode(encoding))
 
@@ -46,15 +46,15 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                             while (data := f.read(buffer_size)):
                                 send_data(client_socket, data)
                                 bar(len(data))
-                    logging.info(f"[+] Sent file {filename} to {client_address}.")
+                    logger.info(f"[+] Sent file {filename} to {client_address}.")
                 else:
                     send_data(client_socket, "FILE NOT FOUND".encode(encoding))
             
             elif command == 'EXIT':
-                logging.info(f"[-] Client {client_address} disconnected.")
+                logger.info(f"[-] Client {client_address} disconnected.")
                 break
     except Exception as e:
-        logging.error(f"Error handling client {client_address}: {e}")
+        logger.error(f"Error handling client {client_address}: {e}")
     finally:
         client_socket.close()
         

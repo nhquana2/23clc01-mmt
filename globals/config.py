@@ -1,6 +1,5 @@
 from dotenv import dotenv_values
-import logging
-logging.basicConfig(level = logging.INFO)
+from .logger import *
 
 # Get the values from the .env file and set them as global variables
 def init_env_values():
@@ -13,4 +12,4 @@ def init_env_values():
     HEADER_SIZE = int(env_values["HEADER_SIZE"])
     ENCODING = env_values["ENCODING"]
     UPLOAD_FOLDER = env_values["UPLOAD_FOLDER"]
-    logging.info("Environment variables loaded into global variables.")
+    logger.info("Environment variables loaded into global variables.")

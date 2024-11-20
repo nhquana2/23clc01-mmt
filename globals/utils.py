@@ -1,9 +1,8 @@
 #Universal utility functions used by both the client and server
 import os
 import socket
-import logging
-logging.basicConfig(level = logging.INFO)
 
+from .logger import *
 from . import config
 
 def send_data(conn, data):
