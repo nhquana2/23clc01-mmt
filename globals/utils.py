@@ -8,7 +8,7 @@ from . import config
 
 def send_data(conn, data):
     data_len = len(data)
-    header = data_len.to_bytes(4, byteorder='big')
+    header = data_len.to_bytes(config.HEADER_SIZE, byteorder='big')
     conn.sendall(header + data) 
 
 def recv_data(conn):
@@ -22,7 +22,7 @@ def recv_data(conn):
         header_bytes_recd += len(chunk)
     
     header = b''.join(header_chunks)
-    data_len = int.from_bytes(header[0:4], byteorder='big')
+    data_len = int.from_bytes(header[0:config.HEADER_SIZE], byteorder='big')
 
     chunks = []
     bytes_recd = 0

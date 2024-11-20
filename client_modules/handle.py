@@ -62,7 +62,7 @@ def download_file(filename, client_socket):
         print(f"An error occurred during file download: {e}")
         
 def handle_command(conn):
-    command = input("Enter command (upload <filename> or download <filename>): ").strip()
+    command = input("Enter command (upload <filename> or download <filename> or exit): ").strip()
     if command == "exit":
             conn.send("EXIT".encode(ENCODING))
             print("Disconnected from server.")
@@ -79,4 +79,4 @@ def handle_command(conn):
         download_thread.join()
         
     else:
-        print("Invalid command. Use 'upload <filename>' or 'download <filename>'.")
+        print("Invalid command. Use 'upload <filename>' or 'download <filename> or exit'.")
