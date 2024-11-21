@@ -15,19 +15,20 @@ SERVER_PORT=config.SERVER_PORT
 BUFFER_SIZE=config.BUFFER_SIZE
 ENCODING=config.ENCODING
 
-def upload_file(filename, client_socket):
-    if not os.path.exists(filename):
-        print(f"File '{filename}' not found!")
+def upload_file(file_path, client_socket):
+    if not os.path.exists(file_path):
+        print(f"Path '{file_path}' not found!")
         return
     try:
+        file_name = os.path.basename(file_path)
         send_data(client_socket, "UPLOAD".encode(ENCODING))
-        send_data(client_socket, filename.encode(ENCODING))
-        file_size = os.path.getsize(filename)
+        send_data(client_socket, file_name.encode(ENCODING))
+        file_size = os.path.getsize(file_path)
         send_data(client_socket, str(file_size).encode(ENCODING))
 
-        with open(filename, "rb") as f:
+        with open(file_path, "rb") as f:
             bytes_sent = 0
-            with alive_bar(file_size, title=f"Uploading {filename}") as bar:
+            with alive_bar(file_size, title=f"Uploading {file_name}") as bar:
                 while bytes_sent < file_size:
                     data = f.read(BUFFER_SIZE)
                     send_data(client_socket, data)
@@ -38,18 +39,18 @@ def upload_file(filename, client_socket):
     except Exception as e:
         print(f"An error occurred during file upload: {e}")
 
-def download_file(filename, client_socket):
+def download_file(file_name, client_socket):
     try:
         send_data(client_socket, "DOWNLOAD".encode(ENCODING))
-        send_data(client_socket, filename.encode(ENCODING))
+        send_data(client_socket, file_name.encode(ENCODING))
         response = recv_data(client_socket).decode(ENCODING)
         if response == "FILE NOT FOUND":
-            print(f"File '{filename}' not found on server.")
+            print(f"File '{file_name}' not found on server.")
         else:
             file_size = int(response)
-            with open(f"downloaded_{filename}", "wb") as f:
+            with open(f"downloaded_{file_name}", "wb") as f:
                 bytes_received = 0
-                with alive_bar(file_size, title=f"Downloading {filename}") as bar:
+                with alive_bar(file_size, title=f"Downloading {file_name}") as bar:
                     while bytes_received < file_size:
                         data = recv_data(client_socket)
                         if not data:
@@ -57,12 +58,12 @@ def download_file(filename, client_socket):
                         f.write(data)
                         bytes_received += len(data)
                         bar(len(data))
-            print(f"File '{filename}' downloaded successfully.")
+            print(f"File '{file_name}' downloaded successfully.")
     except Exception as e:
         print(f"An error occurred during file download: {e}")
         
 def handle_command(conn):
-    command = input("Enter command (upload <filename> or download <filename> or exit): ").strip()
+    command = input("Enter command (upload <file_path> or download <file_name> or exit): ").strip()
     if command == "exit":
             conn.send("EXIT".encode(ENCODING))
             print("Disconnected from server.")
@@ -79,4 +80,4 @@ def handle_command(conn):
         download_thread.join()
         
     else:
-        print("Invalid command. Use 'upload <filename>' or 'download <filename> or exit'.")
+        print("Invalid command. Use 'upload <file_path>' or 'download <file_name> or exit'.")
