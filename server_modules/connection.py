@@ -14,6 +14,10 @@ def create_server(host, port):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind((host, port))
         server.listen(5)
+
+        if not os.path.exists(config.UPLOAD_FOLDER):
+            os.makedirs(config.UPLOAD_FOLDER)
+
         return server
     except socket.error as e:
         logger.info("Socket error: ", e)

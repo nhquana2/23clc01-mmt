@@ -3,21 +3,11 @@ config = globals.config
 import time
 import os
 from threading import Thread
-from server_modules.connection import create_server
-import server_modules.handle
+from server_modules.connection import *
+from server_modules.handle import *
 
 from globals.utils import *
 from globals.logger import *
-
-UPLOAD_FOLDER=config.UPLOAD_FOLDER
-accept_incoming_connections = server_modules.handle.accept_incoming_connections
-handle_client = server_modules.handle.handle_client
-
-
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-
 
 def main():
     CLIENTS = {}
