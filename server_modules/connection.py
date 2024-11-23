@@ -20,10 +20,10 @@ def create_server(host, port):
 
         return server
     except socket.error as e:
-        logger.info("Socket error: ", e)
+        logger.info("Socket error: %s" % e)
         return None
     except Exception as e:
-        logger.info("General error: ", e)
+        logger.info("General error: %s" % e)
         return None
 
 def accept_incoming_connections(server, clients, buffer_size, encoding):
