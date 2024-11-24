@@ -9,11 +9,13 @@ from server_modules.handle import *
 from globals.utils import *
 from globals.logger import *
 
+from globals.console import console
+
 def main():
     CLIENTS = {}
     SERVER = create_server(config.SERVER_HOST, config.SERVER_PORT)
     if SERVER is None:
-        print("Server could not be created. Program terminated.")
+        console.print("[bold red]Server could not be created. Program terminated.")
         return
     logger.info("Server is running on %s:%s" % (config.SERVER_HOST, config.SERVER_PORT))
     try:

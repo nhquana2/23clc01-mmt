@@ -2,82 +2,157 @@ import globals
 config = globals.config
 utils = globals.utils
 import time
+import signal
 from client_modules.connection import *
-from globals.utils import *
 import socket
 import os
-from threading import Thread
-from alive_progress import *
+
+from concurrent.futures import ThreadPoolExecutor
+from threading import Thread, Event
+
 from globals.utils import *
+from globals.console import console
+
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    TaskID,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
 
 SERVER_HOST=config.SERVER_HOST
 SERVER_PORT=config.SERVER_PORT
 BUFFER_SIZE=config.BUFFER_SIZE
 ENCODING=config.ENCODING
 
-def upload_file(file_path, client_socket):
+def upload_file(file_path, task_id, progress) -> None:
+
     if not os.path.exists(file_path):
-        print(f"Path '{file_path}' not found!")
+        progress.console.print(f"Path '{file_path}' not found!")
         return
     try:
+        client_socket = connect_server(config.SERVER_HOST, config.SERVER_PORT)
+        if client_socket is None:
+            progress.console.print("[bold red]Server could not be connected. Program terminated.")
+            return
+        client_ip, client_port = client_socket.getsockname()
+        logger.info("Client ('%s':%s) is connected to server ('%s':%s)" % (client_ip, client_port, config.SERVER_HOST, config.SERVER_PORT))
+
         file_name = os.path.basename(file_path)
+
         send_data(client_socket, "UPLOAD".encode(ENCODING))
         send_data(client_socket, file_name.encode(ENCODING))
         file_size = os.path.getsize(file_path)
         send_data(client_socket, str(file_size).encode(ENCODING))
 
+        progress.update(task_id, total=file_size)
+
         with open(file_path, "rb") as f:
             bytes_sent = 0
-            with alive_bar(file_size, title=f"Uploading {file_name}") as bar:
-                while bytes_sent < file_size:
-                    data = f.read(BUFFER_SIZE)
-                    send_data(client_socket, data)
-                    bytes_sent += len(data)
-                    bar(len(data))
+            progress.start_task(task_id)
+            while bytes_sent < file_size:
+                data = f.read(BUFFER_SIZE)
+                send_data(client_socket, data)
+                bytes_sent += len(data)
+                progress.update(task_id, advance=len(data))
         response = recv_data(client_socket).decode(ENCODING)
-        print(f"\n[+] {response}")
+        progress.console.print(f"[+] {response}")
     except Exception as e:
-        print(f"An error occurred during file upload: {e}")
+        progress.console.print(f"An error occurred during file upload: {e}")
+    finally:
+        client_socket.close()
 
-def download_file(file_name, client_socket):
+def download_file(file_name, task_id, progress) -> None:
     try:
+        client_socket = connect_server(config.SERVER_HOST, config.SERVER_PORT)
+        if client_socket is None:
+            progress.console.print("[bold red]Server could not be connected. Program terminated.")
+            return
+        client_ip, client_port = client_socket.getsockname()
+        logger.info("Client ('%s':%s) is connected to server ('%s':%s)" % (client_ip, client_port, config.SERVER_HOST, config.SERVER_PORT))    
         send_data(client_socket, "DOWNLOAD".encode(ENCODING))
         send_data(client_socket, file_name.encode(ENCODING))
         response = recv_data(client_socket).decode(ENCODING)
         if response == "FILE NOT FOUND":
-            print(f"File '{file_name}' not found on server.")
+            progress.console.print(f"File '{file_name}' not found on server.")
         else:
             file_size = int(response)
+            progress.update(task_id, total=file_size)
+
             with open(f"downloaded_{file_name}", "wb") as f:
                 bytes_received = 0
-                with alive_bar(file_size, title=f"Downloading {file_name}") as bar:
-                    while bytes_received < file_size:
-                        data = recv_data(client_socket)
-                        if not data:
-                            break
-                        f.write(data)
-                        bytes_received += len(data)
-                        bar(len(data))
-            print(f"File '{file_name}' downloaded successfully.")
+                progress.start_task(task_id)
+                while bytes_received < file_size:
+                    data = recv_data(client_socket)
+                    if not data:
+                        break
+                    f.write(data)
+                    bytes_received += len(data)
+                    progress.update(task_id, advance=len(data))
+            progress.console.print(f"File '{file_name}' downloaded successfully.")
     except Exception as e:
-        print(f"An error occurred during file download: {e}")
-        
-def handle_command(conn):
-    command = input("Enter command (upload <file_path> or download <file_name> or exit): ").strip()
+        progress.console.print(f"An error occurred during file download: {e}")
+    finally:
+        client_socket.close()
+
+def handle_download_command(file_name):
+    progress = Progress(
+        TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
+        BarColumn(bar_width=None),
+        "[progress.percentage]{task.percentage:>3.1f}%",
+        "•",
+        DownloadColumn(),
+        "•",
+        TransferSpeedColumn(),
+        "•",
+        TimeRemainingColumn(),
+    )
+    with progress:
+        with ThreadPoolExecutor() as pool:
+            task_id = progress.add_task("Download", filename=file_name, start=False)
+            pool.submit(download_file, file_name, task_id, progress)
+
+def handle_upload_command(path):
+    file_paths = []
+    if os.path.isdir(path):
+        for root, _, files in os.walk(path):
+            for file in files:
+                file_paths.append(os.path.join(root, file))
+    else:
+        file_paths.append(path)
+
+    progress = Progress(
+        TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
+        BarColumn(bar_width=None),
+        "[progress.percentage]{task.percentage:>3.1f}%",
+        "•",
+        DownloadColumn(),
+        "•",
+        TransferSpeedColumn(),
+        "•",
+        TimeRemainingColumn(),
+    )    
+
+    with progress:
+        with ThreadPoolExecutor() as pool:
+            for file_path in file_paths:
+                task_id = progress.add_task("Upload", filename=os.path.basename(file_path), start=False)
+                pool.submit(upload_file, file_path, task_id, progress)
+
+def handle_command():
+    command = console.input("Enter command (upload <file_path> or download <file_name> or exit): ").strip()
     if command == "exit":
-            conn.send("EXIT".encode(ENCODING))
-            print("Disconnected from server.")
+            console.print("Disconnected from server.")
             return
     if command.startswith("upload "):
-        filename = command[7:].strip()
-        upload_thread = Thread(target=upload_file, args=(filename, conn), daemon=True)
-        upload_thread.start()
-        upload_thread.join()
+        path = command[7:].strip()
+        handle_upload_command(path)
     elif command.startswith("download "):
-        filename = command[9:].strip()
-        download_thread = Thread(target=download_file, args=(filename, conn), daemon=True)
-        download_thread.start()
-        download_thread.join()
+        path = command[9:].strip()
+        handle_download_command(path)
         
     else:
-        print("Invalid command. Use 'upload <file_path>' or 'download <file_name> or exit'.")
+        console.print("Invalid command. Use 'upload <file_path>' or 'download <file_name> or exit'.")
