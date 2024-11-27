@@ -13,8 +13,13 @@ from globals.logger import *
 from globals.console import console
 
 def main():
-    while True:
-           handle_command()
+    try:
+        while True:
+            handle_command()
+    except KeyboardInterrupt:
+        console.print("\nClient program terminated.")
+    except Exception as e:
+        console.print(f"\nError occured: {e}")
 
 if __name__ == "__main__":
     main()

@@ -11,6 +11,7 @@ def send_data(conn, data):
     conn.sendall(header + data) 
 
 def recv_data(conn):
+    conn.settimeout(5.0)
     header_chunks = []
     header_bytes_recd = 0
     while header_bytes_recd < config.HEADER_SIZE:

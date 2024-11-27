@@ -28,8 +28,15 @@ SERVER_PORT=config.SERVER_PORT
 BUFFER_SIZE=config.BUFFER_SIZE
 ENCODING=config.ENCODING
 
-def upload_file(file_path, task_id, progress) -> None:
+done_event = Event()
 
+def handle_sigint(signum, frame):
+    done_event.set()
+
+def default_sigint(signum, frame):
+    raise KeyboardInterrupt
+
+def upload_file(file_path, task_id, base_path, progress) -> None:
     if not os.path.exists(file_path):
         progress.console.print(f"Path '{file_path}' not found!")
         return
@@ -39,9 +46,13 @@ def upload_file(file_path, task_id, progress) -> None:
             progress.console.print("[bold red]Server could not be connected. Program terminated.")
             return
         client_ip, client_port = client_socket.getsockname()
-        logger.info("Client ('%s':%s) is connected to server ('%s':%s)" % (client_ip, client_port, config.SERVER_HOST, config.SERVER_PORT))
+        #logger.info("Client ('%s':%s) is connected to server ('%s':%s)" % (client_ip, client_port, config.SERVER_HOST, config.SERVER_PORT))
 
         file_name = os.path.basename(file_path)
+        if base_path != "":
+            base_dir = os.path.basename(base_path) 
+            file_name = os.path.relpath(file_path, base_path)
+            file_name = os.path.join(base_dir, file_name)
 
         send_data(client_socket, "UPLOAD".encode(ENCODING))
         send_data(client_socket, file_name.encode(ENCODING))
@@ -58,6 +69,11 @@ def upload_file(file_path, task_id, progress) -> None:
                 send_data(client_socket, data)
                 bytes_sent += len(data)
                 progress.update(task_id, advance=len(data))
+                response = recv_data(client_socket).decode(ENCODING)
+                if response != "OK":
+                    raise Exception("Server not responding correctly.")
+                if done_event.is_set():
+                    raise Exception("Upload interrupted by user.")
         response = recv_data(client_socket).decode(ENCODING)
         progress.console.print(f"[+] {response}")
     except Exception as e:
@@ -117,7 +133,9 @@ def handle_download_command(file_name):
 
 def handle_upload_command(path):
     file_paths = []
+    base_path = "" #base_path only needed for uploading directories
     if os.path.isdir(path):
+        base_path = os.path.abspath(path)
         for root, _, files in os.walk(path):
             for file in files:
                 file_paths.append(os.path.join(root, file))
@@ -140,19 +158,21 @@ def handle_upload_command(path):
         with ThreadPoolExecutor() as pool:
             for file_path in file_paths:
                 task_id = progress.add_task("Upload", filename=os.path.basename(file_path), start=False)
-                pool.submit(upload_file, file_path, task_id, progress)
+                pool.submit(upload_file, file_path, task_id, base_path, progress)
 
 def handle_command():
     command = console.input("Enter command (upload <file_path> or download <file_name> or exit): ").strip()
     if command == "exit":
-            console.print("Disconnected from server.")
-            return
+            raise KeyboardInterrupt
     if command.startswith("upload "):
+        signal.signal(signal.SIGINT, handle_sigint)
         path = command[7:].strip()
         handle_upload_command(path)
+        signal.signal(signal.SIGINT, default_sigint)
     elif command.startswith("download "):
+        signal.signal(signal.SIGINT, handle_sigint)
         path = command[9:].strip()
         handle_download_command(path)
-        
+        signal.signal(signal.SIGINT, default_sigint)
     else:
         console.print("Invalid command. Use 'upload <file_path>' or 'download <file_name> or exit'.")

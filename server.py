@@ -22,7 +22,7 @@ def main():
         ACCEPT_THREAD = Thread(target=accept_incoming_connections, args=(SERVER, CLIENTS, config.BUFFER_SIZE, config.ENCODING))
         ACCEPT_THREAD.daemon = True
         ACCEPT_THREAD.start()
-        input("Press Enter to shut down the server...\n")
+        input("Enter anything or send Ctrl-C to shut down the server...\n")
     except KeyboardInterrupt:
         logger.info("Server shutdown requested.")
     except Exception as e:
