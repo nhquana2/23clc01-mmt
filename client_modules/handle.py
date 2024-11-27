@@ -38,12 +38,12 @@ def default_sigint(signum, frame):
 
 def upload_file(file_path, task_id, base_path, progress) -> None:
     if not os.path.exists(file_path):
-        progress.console.print(f"Path '{file_path}' not found!")
+        progress.console.print(f"Path '{file_path}' not found!", style="bold red")
         return
     try:
         client_socket = connect_server(config.SERVER_HOST, config.SERVER_PORT)
         if client_socket is None:
-            progress.console.print("[bold red]Server could not be connected. Program terminated.")
+            progress.console.print("Server could not be connected. Program terminated.", style="bold red")
             return
         client_ip, client_port = client_socket.getsockname()
         #logger.info("Client ('%s':%s) is connected to server ('%s':%s)" % (client_ip, client_port, config.SERVER_HOST, config.SERVER_PORT))
@@ -75,9 +75,9 @@ def upload_file(file_path, task_id, base_path, progress) -> None:
                 if done_event.is_set():
                     raise Exception("Upload interrupted by user.")
         response = recv_data(client_socket).decode(ENCODING)
-        progress.console.print(f"[+] {response}")
+        progress.console.print(f"[+] {response}", style="bold green")
     except Exception as e:
-        progress.console.print(f"An error occurred during file upload: {e}")
+        progress.console.print(f"An error occurred during file upload: {e}", style="bold red")
     finally:
         client_socket.close()
 
@@ -85,7 +85,7 @@ def download_file(file_name, task_id, progress) -> None:
     try:
         client_socket = connect_server(config.SERVER_HOST, config.SERVER_PORT)
         if client_socket is None:
-            progress.console.print("[bold red]Server could not be connected. Program terminated.")
+            progress.console.print("Server could not be connected. Program terminated.", style="bold red")
             return
         client_ip, client_port = client_socket.getsockname()
         logger.info("Client ('%s':%s) is connected to server ('%s':%s)" % (client_ip, client_port, config.SERVER_HOST, config.SERVER_PORT))    
@@ -93,12 +93,14 @@ def download_file(file_name, task_id, progress) -> None:
         send_data(client_socket, file_name.encode(ENCODING))
         response = recv_data(client_socket).decode(ENCODING)
         if response == "FILE NOT FOUND":
-            progress.console.print(f"File '{file_name}' not found on server.")
+            progress.console.print(f"File '{file_name}' not found on server.", style="bold red")
         else:
             file_size = int(response)
             progress.update(task_id, total=file_size)
 
-            with open(f"downloaded_{file_name}", "wb") as f:
+            file_name = os.path.basename(file_name)
+
+            with open(f"client_files/{file_name}", "wb") as f:
                 bytes_received = 0
                 progress.start_task(task_id)
                 while bytes_received < file_size:
@@ -107,10 +109,11 @@ def download_file(file_name, task_id, progress) -> None:
                         break
                     f.write(data)
                     bytes_received += len(data)
+                    send_data(client_socket, "OK".encode(ENCODING))
                     progress.update(task_id, advance=len(data))
-            progress.console.print(f"File '{file_name}' downloaded successfully.")
+            progress.console.print(f"File '{file_name}' downloaded successfully.", style="bold green")
     except Exception as e:
-        progress.console.print(f"An error occurred during file download: {e}")
+        progress.console.print(f"An error occurred during file download: {e}", style="bold red")
     finally:
         client_socket.close()
 
@@ -175,4 +178,4 @@ def handle_command():
         handle_download_command(path)
         signal.signal(signal.SIGINT, default_sigint)
     else:
-        console.print("Invalid command. Use 'upload <file_path>' or 'download <file_name> or exit'.")
+        console.print("Invalid command. Use 'upload <file_path>' or 'download <file_name> or exit'.", style="bold red")

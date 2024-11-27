@@ -20,6 +20,8 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
             file_path = os.path.join(UPLOAD_FOLDER, file_name)
 
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+            logger.info(f"Start receiving file {file_name} from {client_address}...")
             
             with open(file_path, "wb") as f:
                 bytes_read = 0
@@ -41,10 +43,11 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                 file_size = os.path.getsize(file_path)
                 send_data(client_socket, str(file_size).encode(encoding))
                 with open(file_path, "rb") as f:
-                    with alive_bar(file_size, title=f"Sending {file_name}") as bar:
-                        while (data := f.read(buffer_size)):
-                            send_data(client_socket, data)
-                            bar(len(data))
+                    while (data := f.read(buffer_size)):
+                        send_data(client_socket, data)
+                        response = recv_data(client_socket).decode(encoding)
+                        if response != "OK":
+                            raise Exception("Client not responding correctly.")
                 logger.info(f"[+] Sent file {file_name} to {client_address}.")
             else:
                 send_data(client_socket, "FILE NOT FOUND".encode(encoding))

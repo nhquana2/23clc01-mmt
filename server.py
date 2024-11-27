@@ -15,7 +15,7 @@ def main():
     CLIENTS = {}
     SERVER = create_server(config.SERVER_HOST, config.SERVER_PORT)
     if SERVER is None:
-        console.print("[bold red]Server could not be created. Program terminated.")
+        console.print("Server could not be created. Program terminated.", style="bold red")
         return
     logger.info("Server is running on %s:%s" % (config.SERVER_HOST, config.SERVER_PORT))
     try:

@@ -17,9 +17,9 @@ def main():
         while True:
             handle_command()
     except KeyboardInterrupt:
-        console.print("\nClient program terminated.")
+        console.print("\nClient program terminated.",style="blue")
     except Exception as e:
-        console.print(f"\nError occured: {e}")
+        console.print(f"\nError occured: {e}", style="bold red")
 
 if __name__ == "__main__":
     main()
