@@ -77,6 +77,7 @@ def upload_file(file_path, task_id, base_path, progress) -> None:
         response = recv_data(client_socket).decode(ENCODING)
         progress.console.print(f"[+] {response}", style="bold green")
     except Exception as e:
+        time.sleep(0.1) #avoid progress bar glitch
         progress.console.print(f"An error occurred during file upload: {e}", style="bold red")
     finally:
         client_socket.close()

@@ -24,6 +24,7 @@ def main():
         ACCEPT_THREAD.start()
         input("Enter anything or send Ctrl-C to shut down the server...\n")
     except KeyboardInterrupt:
+        print("\r", end="") # Avoid printing ^C glitch
         logger.info("Server shutdown requested.")
     except Exception as e:
         logger.error(f"Error: {e}")

@@ -51,6 +51,8 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                 logger.info(f"[+] Sent file {file_name} to {client_address}.")
             else:
                 send_data(client_socket, "FILE NOT FOUND".encode(encoding))
+    except socket.error as e:
+        logger.error(f"Error handling client {client_address}: {e}")
     except Exception as e:
         logger.error(f"Error handling client {client_address}: {e}")
         logger.error(f"Failed to receive file {file_name} from {client_address}.")
