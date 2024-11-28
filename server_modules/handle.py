@@ -6,6 +6,7 @@ from alive_progress import *
 from globals.logger import *
 import time
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
+import platform
 
 from globals.utils import *
 
@@ -17,6 +18,12 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
         command = recv_data(client_socket).decode(encoding)
         if command == 'UPLOAD':
             file_name = recv_data(client_socket).decode(encoding)
+
+            if platform.system() == "Linux":
+                file_name = file_name.replace("\\", "/")
+            else:
+                file_name = file_name.replace("/", "\\")
+
             file_size = int(recv_data(client_socket).decode(encoding))
             file_path = os.path.join(UPLOAD_FOLDER, file_name)
 
