@@ -6,12 +6,27 @@ from alive_progress import *
 from globals.logger import *
 import time
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
+keys_file = "key_server.json"
 import platform
 
 from globals.utils import *
 
 """Handles a single client connection."""
 def handle_client(client_socket, client_address, buffer_size, encoding):
+
+    key_value = recv_data(client_socket).decode(encoding)
+    valid_keys = load_valid_keys(keys_file)
+
+    if not is_valid_key(key_value, valid_keys):
+        logger.info(f"[+] Client {client_address} with {key_value} is not authentication.")
+        send_data(client_socket, "NOT VALID".encode(encoding))
+        client_socket.close()
+        return
+    else: 
+        logger.info(f"[+] Client {client_address} with {key_value} is authentication.")
+        send_data(client_socket, "WELCOME".encode(encoding))
+
+    
     logger.info(f"[+] Client {client_address} connected.")
     try:
         file_name = "<undefined>"

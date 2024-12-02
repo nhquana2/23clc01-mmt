@@ -3,6 +3,7 @@ import customtkinter
 def button_callback():
     print("button pressed")
 
+
 app = customtkinter.CTk()
 app.title("my app")
 app.geometry("400x150")
