@@ -23,7 +23,6 @@ def validate_port(port):
         return False
     
 def handle_upload(server_ip, server_port, path_label, progress_label):
-    print(f"{server_ip} {server_port}")
     path = path_label.cget("text")
     if not path or path == "No file selected":
         progress_label.configure(text="Please select a valid file or directory.")
@@ -39,13 +38,10 @@ def handle_upload(server_ip, server_port, path_label, progress_label):
     try:
       # print(f"{path} {server_ip} {server_port}")
       signal.signal(signal.SIGINT, handle_sigint)
-      if server_port == config.SERVER_PORT:
-          print("ye")
-      if  (server_ip) == config.SERVER_PORT:
-          print("yew2")
-      server_ip = config.SERVER_HOST
-      server_port = config . SERVER_PORT
-      handle_upload_command(path,server_ip,server_port)
+      
+      #server_ip = config.SERVER_HOST
+      #server_port = config . SERVER_PORT
+      handle_upload_command(path,server_ip,int(server_port))
     except Exception as e:
        progress_label.configure(text=f"Upload failed: {str(e)}")
 
