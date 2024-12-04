@@ -5,12 +5,27 @@ from threading import Thread
 from globals.logger import *
 import time
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
+keys_file = "server_credentials/keys.json"
 import platform
 
 from globals.utils import *
 
 """Handles a single client connection."""
 def handle_client(client_socket, client_address, buffer_size, encoding):
+
+    key_value = recv_data(client_socket).decode(encoding)
+    valid_keys = load_valid_keys(keys_file)
+
+    if not is_valid_key(key_value, valid_keys):
+        logger.info(f"[+] Client {client_address} using auth key {key_value} failed to authenticate.")
+        send_data(client_socket, "INVALID_KEY".encode(encoding))
+        client_socket.close()
+        return
+    else: 
+        logger.info(f"[+] Client {client_address} using auth key {key_value} authenticated successfully.")
+        send_data(client_socket, "VALID_KEY".encode(encoding))
+
+    
     logger.info(f"[+] Client {client_address} connected.")
     try:
         file_name = "<undefined>"
