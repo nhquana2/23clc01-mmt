@@ -15,7 +15,7 @@ from globals.console import console
 
 def main():
     try:
-        config.KEY = console.input("Enter your key: ")
+        config.KEY = console.input("Enter your authentication key: ")
         while True:
             handle_command()
     except KeyboardInterrupt:

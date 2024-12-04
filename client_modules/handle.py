@@ -56,35 +56,34 @@ def upload_file(file_path, task_id, base_path, progress, KEY) -> None:
 
         send_data(client_socket, KEY.encode(ENCODING))
 
-        if recv_data(client_socket).decode(ENCODING) == "NOT VALID":
-            progress.console.print("[!] Server rejected connection by valid key", style="bold red")
+        if recv_data(client_socket).decode(ENCODING) == "INVALID_KEY":
+            progress.console.print("[!] Server rejected connection, invalid key provided.", style="bold red")
             client_socket.close()
             return
-        else:
-            send_data(client_socket, "UPLOAD".encode(ENCODING))
-            send_data(client_socket, file_name.encode(ENCODING))
-            file_size = os.path.getsize(file_path)
-            send_data(client_socket, str(file_size).encode(ENCODING))
 
-            progress.update(task_id, total=file_size)
+        send_data(client_socket, "UPLOAD".encode(ENCODING))
+        send_data(client_socket, file_name.encode(ENCODING))
+        file_size = os.path.getsize(file_path)
+        send_data(client_socket, str(file_size).encode(ENCODING))
 
-            with open(file_path, "rb") as f:
-                bytes_sent = 0
-                progress.start_task(task_id)
-                while bytes_sent < file_size:
-                    data = f.read(BUFFER_SIZE)
-                    send_data(client_socket, data)
-                    bytes_sent += len(data)
-                    progress.update(task_id, advance=len(data))
-                    response = recv_data(client_socket).decode(ENCODING)
-                    if response != "OK":
-                        raise Exception("Server not responding correctly.")
-                    if done_event.is_set():
-                        raise Exception("Upload interrupted by user.")
-            response = recv_data(client_socket).decode(ENCODING)
-            progress.console.print(f"[+] {response}", style="bold green")
+        progress.update(task_id, total=file_size)
+
+        with open(file_path, "rb") as f:
+            bytes_sent = 0
+            progress.start_task(task_id)
+            while bytes_sent < file_size:
+                data = f.read(BUFFER_SIZE)
+                send_data(client_socket, data)
+                bytes_sent += len(data)
+                progress.update(task_id, advance=len(data))
+                response = recv_data(client_socket).decode(ENCODING)
+                if response != "OK":
+                    raise Exception("Server not responding correctly.")
+                if done_event.is_set():
+                    raise Exception("Upload interrupted by user.")
+        response = recv_data(client_socket).decode(ENCODING)
+        progress.console.print(f"[+] {response}", style="bold green")
     except Exception as e:
-        time.sleep(0.1) #avoid progress bar glitch
         progress.console.print(f"An error occurred during file upload: {e}", style="bold red")
     finally:
         client_socket.close()
@@ -179,13 +178,12 @@ def handle_upload_command(path, KEY):
                 pool.submit(upload_file, file_path, task_id, base_path, progress, KEY)
 
 def handle_command():
-    #console.print(config.KEY)
     command = console.input("Enter command (upload <file_path> or download <file_name> or key <value> or exit): ").strip()
     if command == "exit":
             raise KeyboardInterrupt
     if command.startswith("key "):
         config.KEY = command[4:].strip()
-        console.print("UPDATE KEY SUCCESSFULLY!", style="bold green")
+        console.print("Authentication key updated successfully", style="bold green")
     elif command.startswith("upload "):
         signal.signal(signal.SIGINT, handle_sigint)
         path = command[7:].strip()
