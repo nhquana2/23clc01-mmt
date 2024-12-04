@@ -2,7 +2,6 @@ import socket
 from .utilities import *
 from globals.utils import *
 from threading import Thread
-from alive_progress import *
 from globals.logger import *
 import time
 UPLOAD_FOLDER=config.UPLOAD_FOLDER

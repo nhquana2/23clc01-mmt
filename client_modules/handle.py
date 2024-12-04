@@ -36,12 +36,12 @@ def handle_sigint(signum, frame):
 def default_sigint(signum, frame):
     raise KeyboardInterrupt
 
-def upload_file(file_path, task_id, base_path, progress) -> None:
+def upload_file(file_path, task_id, base_path, progress, server_host, server_port) -> None:
     if not os.path.exists(file_path):
         progress.console.print(f"Path '{file_path}' not found!", style="bold red")
         return
     try:
-        client_socket = connect_server(config.SERVER_HOST, config.SERVER_PORT)
+        client_socket = connect_server(server_host, server_port)
         if client_socket is None:
             progress.console.print("Server could not be connected. Program terminated.", style="bold red")
             return
@@ -118,7 +118,7 @@ def download_file(file_name, task_id, progress) -> None:
     finally:
         client_socket.close()
 
-def handle_download_command(file_name):
+def handle_download_command(file_name, server_host, server_port):
     progress = Progress(
         TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
         BarColumn(bar_width=None),
@@ -133,9 +133,9 @@ def handle_download_command(file_name):
     with progress:
         with ThreadPoolExecutor() as pool:
             task_id = progress.add_task("Download", filename=file_name, start=False)
-            pool.submit(download_file, file_name, task_id, progress)
+            pool.submit(download_file, file_name, task_id, progress, server_host, server_port)
 
-def handle_upload_command(path):
+def handle_upload_command(path, server_ip, server_port):
     file_paths = []
     base_path = "" #base_path only needed for uploading directories
     if os.path.isdir(path):
@@ -162,7 +162,7 @@ def handle_upload_command(path):
         with ThreadPoolExecutor() as pool:
             for file_path in file_paths:
                 task_id = progress.add_task("Upload", filename=os.path.basename(file_path), start=False)
-                pool.submit(upload_file, file_path, task_id, base_path, progress)
+                pool.submit(upload_file, file_path, task_id, base_path, progress, server_ip, server_port)
 
 def handle_command():
     command = console.input("Enter command (upload <file_path> or download <file_name> or exit): ").strip()
@@ -171,7 +171,7 @@ def handle_command():
     if command.startswith("upload "):
         signal.signal(signal.SIGINT, handle_sigint)
         path = command[7:].strip()
-        handle_upload_command(path)
+        handle_upload_command(path,config.SERVER_HOST,config.SERVER_PORT)
         signal.signal(signal.SIGINT, default_sigint)
     elif command.startswith("download "):
         signal.signal(signal.SIGINT, handle_sigint)
