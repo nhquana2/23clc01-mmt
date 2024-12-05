@@ -63,9 +63,14 @@ class LoginApp(ctk.CTkFrame):
 
 
 def open_file_explorer(path_label):
-    file_path = filedialog.askopenfilename(title="Select a File or Directory to Upload")
+    file_path = filedialog.askopenfilename(title="Select a File to Upload")
     if file_path:
         path_label.configure(text=file_path)
+
+def open_dir_explorer(path_label):
+    dir_path = filedialog.askdirectory(title="Select a Directory to Upload")
+    if dir_path:
+        path_label.configure(text=dir_path)
 
 class Upper_Upload_Tab(ctk.CTkFrame):
     def __init__(self, master, label, progress):
@@ -96,13 +101,15 @@ class Upper_Upload_Tab(ctk.CTkFrame):
         #self.path_label.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
         self.path_label = label
         self.upload_progress = progress
+        folder_button = ctk.CTkButton(self, text="Select Folder", command=lambda: open_dir_explorer(self.path_label), anchor= "center",font=("Inter", 18))
+        folder_button.grid(row=5, column=2, padx=10, pady=5, sticky = "sw")
         file_button = ctk.CTkButton(self, text="Select File", command=lambda: open_file_explorer(self.path_label), anchor= "center",font=("Inter", 18))
         file_button.grid(row=4, column=2, padx=10, pady=5, sticky = "sw")
         upload_button = ctk.CTkButton(  
             self, text="Upload", font=("Inter", 18),
             command=lambda: handle_upload(self.get_ip.get(), self.get_port.get(),self.path_label, self.upload_progress)
         )
-        upload_button.grid(row=5, column=2, padx=10, pady=5, sticky = "sw")
+        upload_button.grid(row=5, column=1, padx=10, pady=5, sticky = "se")
 
 
 class Lower_Upload_Tab(ctk.CTkFrame):
@@ -136,16 +143,49 @@ class Upload_Tab(ctk.CTkFrame):
 
         Upper_Upload_Tab(self, lower.get_label(), lower.get_progress())
         
-class Download_Tab(ctk.CTkFrame):
+class Upper_Download_Tab(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master)
-        self.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.grid(row = 0, column = 0 ,sticky="nsew")
+        self.grid_columnconfigure((1,2,3,4), weight=1)
+        self.grid_rowconfigure((0,1), weight=0)
+        self.grid_rowconfigure(2, weight=1)
 
+        #self.label = ctk.CTkLabel(self, text="This is the upper frame", text_color="white")
+        #self.label.place(relx=0.5, rely=0.5, anchor="center")
+
+        self.IP_label = ctk.CTkLabel(self, text="Enter your server's IP:", font=("Inter", 18), anchor= "s")
+        self.IP_label.grid(row = 2, column=1, padx=10, pady=10, sticky="se")
+
+        self.port_label = ctk.CTkLabel(self, text="Enter your server's Port:", font=("Inter", 18))
+        self.port_label.grid(row = 3, column=1, padx=10, pady=10, sticky = "se")
+        self.ip = ctk.CTkEntry(self)
+        self.ip.grid(row = 2,column=2, padx=10, pady=10, sticky="sw")
+        self.port = ctk.CTkEntry(self)
+        self.port.grid(row = 3,column=2, padx=10, pady=10, sticky="sw")
+
+       
+    def get_ip(self):
+        print(f"{self.ip.get()}")
+        return self.ip.get()
+    def get_port(self):
+        return self.port.get()
+        
+       # download_label = ctk.CTkLabel(self, text="Enter file name to download:")
+        #download_label.grid(row=4, column=1, padx=20, pady=10, sticky = "se")
+
+        
+
+class Lower_Download_Tab(ctk.CTkFrame):
+    def __init__(self, master, upper_frame):
+        super().__init__(master)
+        self.grid(row = 1, column = 0 ,sticky="nsew")
         self.grid_columnconfigure((0,2), weight=1)
-        self.grid_rowconfigure((0,4), weight=1)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=0)
+        
 
-        # Widgets
-        download_label = ctk.CTkLabel(self, text="Enter file name to download:", anchor="w")
+        download_label = ctk.CTkLabel(self, text="Enter file name to download:")
         download_label.grid(row=1, column=1, padx=20, pady=10)
 
         self.download_entry = ctk.CTkEntry(self, width=400)
@@ -156,11 +196,20 @@ class Download_Tab(ctk.CTkFrame):
 
         download_button = ctk.CTkButton(
             self, text="Download", 
-            command=lambda: print(f"Downloading {self.download_entry.get()}")
+            command=lambda: handle_download(self.download_entry, self.download_progress, upper_frame)
         )
         download_button.grid(row=3, column=1, padx=20, pady=10)
         
 
+class Download_Tab(ctk.CTkFrame):
+    def __init__(self, master):
+        super().__init__(master)
+        self.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.grid_rowconfigure(0, weight=1)  # Make row 0 resizable (for upper frame)
+        self.grid_rowconfigure(1, weight=1)  # Make row 1 resizable (for lower frame)
+        self.grid_columnconfigure(0, weight=1)  # Make column 0 resizable (for the whole parent)
+        upper = Upper_Download_Tab(self)
+        Lower_Download_Tab(self, upper)        
     
 
 class MainPage(ctk.CTkFrame):
