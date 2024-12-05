@@ -36,7 +36,7 @@ def handle_sigint(signum, frame):
 def default_sigint(signum, frame):
     raise KeyboardInterrupt
 
-def upload_file(file_path, task_id, base_path, progress, server_host, server_port, KEY) -> None:
+def upload_file(file_path, task_id, base_path, progress, server_host, server_port, key) -> None:
     if not os.path.exists(file_path):
         progress.console.print(f"Path '{file_path}' not found!", style="bold red")
         return
@@ -54,7 +54,7 @@ def upload_file(file_path, task_id, base_path, progress, server_host, server_por
             file_name = os.path.relpath(file_path, base_path)
             file_name = os.path.join(base_dir, file_name)
 
-        send_data(client_socket, KEY.encode(ENCODING))
+        send_data(client_socket, key.encode(ENCODING))
 
         if recv_data(client_socket).decode(ENCODING) == "INVALID_KEY":
             progress.console.print("[!] Server rejected connection, invalid key provided.", style="bold red")
@@ -88,14 +88,14 @@ def upload_file(file_path, task_id, base_path, progress, server_host, server_por
     finally:
         client_socket.close()
 
-def download_file(file_name, task_id, progress, KEY) -> None:
+def download_file(file_name, task_id, progress, key) -> None:
     try:
         client_socket = connect_server(config.SERVER_HOST, config.SERVER_PORT)
         if client_socket is None:
             progress.console.print("[!] Server could not be connected. Program terminated.", style="bold red")
             return
         client_ip, client_port = client_socket.getsockname()
-        send_data(client_socket, KEY.encode(ENCODING))
+        send_data(client_socket, key.encode(ENCODING))
 
         if recv_data(client_socket).decode(ENCODING) == "NOT VALID":
             progress.console.print("[!] Server rejected connection by valid key", style="bold red")
@@ -131,7 +131,7 @@ def download_file(file_name, task_id, progress, KEY) -> None:
     finally:
         client_socket.close()
 
-def handle_download_command(file_name, server_host, server_port, KEY):
+def handle_download_command(file_name, server_host, server_port, key):
     progress = Progress(
         TextColumn("[bold blue]{task.fields[filename]}", justify="right"),
         BarColumn(bar_width=None),
@@ -146,9 +146,9 @@ def handle_download_command(file_name, server_host, server_port, KEY):
     with progress:
         with ThreadPoolExecutor() as pool:
             task_id = progress.add_task("Download", filename=file_name, start=False)
-            pool.submit(download_file, file_name, task_id, progress, server_host, server_port, KEY)
+            pool.submit(download_file, file_name, task_id, progress, server_host, server_port, key)
 
-def handle_upload_command(path, server_ip, server_port, KEY):
+def handle_upload_command(path, server_ip, server_port, key):
     file_paths = []
     base_path = "" #base_path only needed for uploading directories
     if os.path.isdir(path):
@@ -175,7 +175,7 @@ def handle_upload_command(path, server_ip, server_port, KEY):
         with ThreadPoolExecutor() as pool:
             for file_path in file_paths:
                 task_id = progress.add_task("Upload", filename=os.path.basename(file_path), start=False)
-                pool.submit(upload_file, file_path, task_id, base_path, progress, server_ip, server_port, KEY)
+                pool.submit(upload_file, file_path, task_id, base_path, progress, server_ip, server_port, key)
 
 def handle_command():
     command = console.input("Enter command (upload <file_path> or download <file_name> or key <value> or exit): ").strip()

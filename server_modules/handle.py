@@ -55,7 +55,6 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                     bytes_read += len(data)
                     send_data(client_socket, "OK".encode(encoding))
             logger.info(f"[+] Received file {file_name} from {client_address} and saved to {UPLOAD_FOLDER}.")
-            #client_socket.send(f"File {filename} uploaded successfully.".encode(encoding))
             send_data(client_socket, f"File {file_name} uploaded successfully.".encode(encoding))
 
         elif command == 'DOWNLOAD':
