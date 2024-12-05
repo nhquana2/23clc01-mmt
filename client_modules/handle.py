@@ -88,9 +88,9 @@ def upload_file(file_path, task_id, base_path, progress, server_host, server_por
     finally:
         client_socket.close()
 
-def download_file(file_name, task_id, progress, key) -> None:
+def download_file(file_name, task_id, progress, server_host, server_port, key) -> None:
     try:
-        client_socket = connect_server(config.SERVER_HOST, config.SERVER_PORT)
+        client_socket = connect_server(server_host, server_port)
         if client_socket is None:
             progress.console.print("[!] Server could not be connected. Program terminated.", style="bold red")
             return
@@ -113,6 +113,8 @@ def download_file(file_name, task_id, progress, key) -> None:
                 progress.update(task_id, total=file_size)
 
                 file_name = os.path.basename(file_name)
+
+                os.makedirs("client_files", exist_ok=True)
 
                 with open(f"client_files/{file_name}", "wb") as f:
                     bytes_received = 0
@@ -187,12 +189,12 @@ def handle_command():
     elif command.startswith("upload "):
         signal.signal(signal.SIGINT, handle_sigint)
         path = command[7:].strip()
-        handle_upload_command(path,config.SERVER_HOST,config.SERVER_PORT, config.KEY)
+        handle_upload_command(path, config.SERVER_HOST, config.SERVER_PORT, config.KEY)
         signal.signal(signal.SIGINT, default_sigint)
     elif command.startswith("download "):
         signal.signal(signal.SIGINT, handle_sigint)
         path = command[9:].strip()
-        handle_download_command(path, config.KEY)
+        handle_download_command(path, config.SERVER_HOST, config.SERVER_PORT, config.KEY)
         signal.signal(signal.SIGINT, default_sigint)
     else:
         console.print("Invalid command. Use 'upload <file_path>' or 'download <file_name> or exit'.", style="bold red")
