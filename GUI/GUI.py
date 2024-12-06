@@ -2,14 +2,19 @@ import customtkinter as ctk
 import re
 from tkinter import filedialog
 from .handle_GUI import *
+import json
 
 ctk.set_appearance_mode("Dark") 
 ctk.set_default_color_theme("GUI/theme.json")  
 ctk.set_widget_scaling(0.9)
 
+def open_login_app(window, root):
+    window.destroy()
+    window = LoginApp(master = root)
 def open_main_app(window, root):
     window.destroy()
     window = MainPage(master = root)
+
 
 class LoginApp(ctk.CTkFrame):
     def __init__(self,master):
@@ -19,6 +24,7 @@ class LoginApp(ctk.CTkFrame):
         # Window properties
         master.title("Login Interface")
         master.geometry("400x300")
+        master.minsize(400,300)
         self.grid_rowconfigure(0, weight=0)  
         self.grid_rowconfigure(1, weight=0)
         self.grid_rowconfigure(2, weight=0)
@@ -30,36 +36,28 @@ class LoginApp(ctk.CTkFrame):
         self.title_label = ctk.CTkLabel(self, text="Login", font=("Inter", 24, "bold"))
         self.title_label.grid(row=0, column=0, columnspan=2, padx=10, pady=40)
 
-        self.username_label = ctk.CTkLabel(self, text="Username:")
-        self.username_label.grid(row=1, column=0, padx=10, pady=10, sticky="e")
-        self.username_entry = ctk.CTkEntry(self, placeholder_text="Enter your username", font=("Inter", 13))
-        self.username_entry.grid(row=1, column=1, padx=10, pady=10, sticky="w")
-
-        self.password_label = ctk.CTkLabel(self, text="Password:")
-        self.password_label.grid(row=2, column=0, padx=10, pady=10, sticky="e")
-        self.password_entry = ctk.CTkEntry(self, placeholder_text="Enter your password", show="*",font=("Inter", 13))
-        self.password_entry.grid(row=2, column=1, padx=10, pady=10, sticky="w")
+        self.key_label = ctk.CTkLabel(self, text="Key:")
+        self.key_label.grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        self.key_entry = ctk.CTkEntry(self, placeholder_text="Enter your key", font=("Inter", 13))
+        self.key_entry.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
         self.login_button = ctk.CTkButton(self, text="Login", command=self.login)
-        self.login_button.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
+        self.login_button.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+
 
         self.message_label = ctk.CTkLabel(self, text="")
-        self.message_label.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+        self.message_label.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
     def login(self):
-        username = self.username_entry.get()
-        password = self.password_entry.get()
+        key = self.key_entry.get()
+        config.KEY = key
+        self.message_label.configure(text="Login successful!", text_color="green")
+        self.open()
+            
 
-        if username == "1" and password == "1":
-            self.message_label.configure(text="Login successful!", text_color="green")
-            self.after(500, self.open)  
-        else:
-            self.message_label.configure(text="Invalid credentials", text_color="red")
 
     def open(self):
         open_main_app(self, self.master)
-
-
 
 
 def open_file_explorer(path_label):
@@ -227,21 +225,17 @@ class MainPage(ctk.CTkFrame):
         # Sidebar
         self.sidebar_frame = ctk.CTkFrame(self, width = 180, corner_radius=0, border_color="black", border_width= 2)
         self.sidebar_frame.grid(row=0, column=0, rowspan = 4, sticky = "nsew")
-        self.sidebar_frame.grid_rowconfigure(4, weight=1)
-        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="CustomTkinter", font=ctk.CTkFont(size=20, weight="bold"))
+        self.sidebar_frame.grid_rowconfigure(3, weight=1)
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="File Transfer", font=ctk.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
         
         self.appearance_mode_label = ctk.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
-        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
+        self.appearance_mode_label.grid(row=6, column=0, padx=20, pady=(10, 0))
         self.appearance_mode_optionemenu = ctk.CTkOptionMenu(self.sidebar_frame, values=["Dark","Light"],
                                                                        command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=6, column=0, padx=20, pady=(10, 10))
-        self.scaling_label = ctk.CTkLabel(self.sidebar_frame, text="UI Scaling:", anchor="w")
-        self.scaling_label.grid(row=7, column=0, padx=20, pady=(10, 0))
-        self.scaling_optionemenu = ctk.CTkOptionMenu(self.sidebar_frame, values=[ "90%", "100%"],
-                                                               command=self.change_scaling_event)
-        self.scaling_optionemenu.grid(row=8, column=0, padx=20, pady=(10, 20))
-
+        self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
+        self.changekey_label = ctk.CTkButton(self.sidebar_frame, command =  self.open, text="Back")
+        self.changekey_label.grid(row = 8, column=0, padx=20, pady=(10, 10))
         #Tab view
         self.tab = ctk.CTkTabview(self)
         self.tab.grid(row = 0, column = 1, sticky = "nsew")
@@ -256,7 +250,8 @@ class MainPage(ctk.CTkFrame):
         download_tab.grid_rowconfigure(0, weight = 1)
         Download_Tab(download_tab)
 
-
+    def open(self):
+        open_login_app(self,self.master)
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         ctk.set_appearance_mode(new_appearance_mode)

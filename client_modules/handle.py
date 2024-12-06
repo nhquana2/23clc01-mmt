@@ -62,7 +62,7 @@ def upload_file(file_path, task_id, base_path, progress, server_host, server_por
 
         if recv_data(client_socket).decode(ENCODING) == "INVALID_KEY":
             progress.console.print("[!] Server rejected connection, invalid key provided.", style="bold red")
-            
+            msg[0] = "[!] Server rejected connection, invalid key provided."
             client_socket.close()
             return
 
