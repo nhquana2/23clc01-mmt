@@ -5,7 +5,6 @@ from globals.logger import *
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
 keys_file = "server_credentials/keys.json"
 import platform
-
 from globals.utils import *
 
 """
@@ -17,8 +16,8 @@ Parameters:
     encoding: The encoding.
 """
 
-def handle_client(client_socket, client_address, buffer_size, encoding):
 
+def handle_client(client_socket, client_address, buffer_size, encoding):
     key_value = recv_data(client_socket).decode(encoding)
     valid_keys = load_valid_keys(keys_file)
 
@@ -31,7 +30,6 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
         logger.info(f"[+] Client {client_address} using auth key {key_value} authenticated successfully.")
         send_data(client_socket, "VALID_KEY".encode(encoding))
 
-    
     logger.info(f"[+] Client {client_address} connected.")
 
     try:
@@ -42,7 +40,7 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
 
             file_name = recv_data(client_socket).decode(encoding)
 
-            #Fix the inconsistency in file path separators between Windows and Linux
+            # Fix the inconsistency in file path separators between Windows and Linux
             if platform.system() == "Linux":
                 file_name = file_name.replace("\\", "/")
             else:
@@ -50,6 +48,8 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
 
             file_size = int(recv_data(client_socket).decode(encoding))
             file_path = os.path.join(UPLOAD_FOLDER, file_name)
+
+            file_path = generate_unique_filename(file_path)
 
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
