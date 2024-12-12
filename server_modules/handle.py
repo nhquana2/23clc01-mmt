@@ -1,16 +1,22 @@
-import socket
 from .utilities import *
 from globals.utils import *
 from threading import Thread
 from globals.logger import *
-import time
 UPLOAD_FOLDER=config.UPLOAD_FOLDER
 keys_file = "server_credentials/keys.json"
 import platform
 
 from globals.utils import *
 
-"""Handles a single client connection."""
+"""
+handle_client: Handles a SINGLE client connection.
+Parameters:
+    client_socket: The client socket.
+    client_address: The client address.
+    buffer_size: The buffer size.
+    encoding: The encoding.
+"""
+
 def handle_client(client_socket, client_address, buffer_size, encoding):
 
     key_value = recv_data(client_socket).decode(encoding)
@@ -27,12 +33,16 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
 
     
     logger.info(f"[+] Client {client_address} connected.")
+
     try:
         file_name = "<undefined>"
         command = recv_data(client_socket).decode(encoding)
+
         if command == 'UPLOAD':
+
             file_name = recv_data(client_socket).decode(encoding)
 
+            #Fix the inconsistency in file path separators between Windows and Linux
             if platform.system() == "Linux":
                 file_name = file_name.replace("\\", "/")
             else:
@@ -58,8 +68,10 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
             send_data(client_socket, f"File {file_name} uploaded successfully.".encode(encoding))
 
         elif command == 'DOWNLOAD':
+
             file_name = recv_data(client_socket).decode(encoding)
             file_path = os.path.join(UPLOAD_FOLDER, file_name)
+
             if os.path.exists(file_path):
                 file_size = os.path.getsize(file_path)
                 send_data(client_socket, str(file_size).encode(encoding))
@@ -72,18 +84,11 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                 logger.info(f"[+] Sent file {file_name} to {client_address}.")
             else:
                 send_data(client_socket, "FILE NOT FOUND".encode(encoding))
+
     except Exception as e:
         logger.error(f"Error handling client {client_address}: {e}")
         logger.error(f"Failed to receive file {file_name} from {client_address}.")
+
     finally:
         logger.info(f"[-] Client {client_address} disconnected.")
         client_socket.close()
-        
-        
-def accept_incoming_connections(server_socket, clients, buffer_size, encoding):
-    while True:
-        client_socket, client_address = server_socket.accept()
-        clients[client_address] = client_socket
-        client_thread = Thread(target=handle_client, args=(client_socket, client_address, buffer_size, encoding))
-        client_thread.daemon = True
-        client_thread.start()

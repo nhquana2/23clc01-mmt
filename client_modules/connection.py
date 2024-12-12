@@ -1,11 +1,4 @@
 import socket
-from threading import Thread
-import time
-import globals
-config = globals.config
-
-from globals.logger import *
-from globals.console import console
 
 """Connects to a server socket."""
 def connect_server(host, port):

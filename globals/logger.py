@@ -1,7 +1,8 @@
 import logging
 from rich.logging import RichHandler
 
-#logger configuration
+#FORMAT: used for the console
+#FMT: used for the log file
 FORMAT = "%(message)s"
 FMT = "[{levelname}] {name}: {asctime} | {filename}:{lineno} | {process} >>> {message}"
 
@@ -13,4 +14,5 @@ logging.basicConfig(
     handlers = [RichHandler(rich_tracebacks=True), file_handler]
 )
 
+# Create a logger object which will be used in the entire program
 logger = logging.getLogger("socket_app")

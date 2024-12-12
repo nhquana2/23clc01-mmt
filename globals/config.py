@@ -1,7 +1,10 @@
 from dotenv import dotenv_values
 from .logger import *
 
-# Get the values from the .env file and set them as global variables
+"""
+init_env_values: Initializes the global variables with the values from the .env file.
+"""
+
 def init_env_values():
     try:
         env_values = dotenv_values(".env")

@@ -1,7 +1,5 @@
 import globals
 config = globals.config
-import time
-import os
 from threading import Thread
 from server_modules.connection import *
 from server_modules.handle import *
@@ -10,6 +8,8 @@ from globals.utils import *
 from globals.logger import *
 
 from globals.console import console
+
+#Entry point for the server CLI program
 
 def main():
     CLIENTS = {}

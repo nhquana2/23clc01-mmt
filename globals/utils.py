@@ -1,14 +1,27 @@
 #Universal utility functions used by both the client and server
-import os
-import socket
 
 from .logger import *
 from . import config
+
+"""
+send_data: Sends ALL data (with message boundaries) to the client or server.
+Parameters:
+    conn: The connection object.
+    data: The data to send.
+"""
 
 def send_data(conn, data):
     data_len = len(data)
     header = data_len.to_bytes(config.HEADER_SIZE, byteorder='big')
     conn.sendall(header + data) 
+
+"""
+recv_data: Receives ALL data (with message boundaries) from the client or server.
+Parameters:
+    conn: The connection object.
+Returns:
+    The received data (all data sent by the client in ONE send_data call above).
+"""
 
 def recv_data(conn):
     conn.settimeout(5.0)

@@ -1,6 +1,5 @@
 import socket
 from threading import Thread
-import time
 import globals
 config = globals.config
 
@@ -8,8 +7,16 @@ from .handle import *
 
 from globals.logger import *
 
+"""
+create_server: Creates a server socket.
+Parameters:
+    host: The host IP address.
+    port: The port number.
+Returns:
+    The server socket (None if error occured).
+"""
+
 def create_server(host, port):
-    """Creates a server socket."""
     try:
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind((host, port))
@@ -26,11 +33,19 @@ def create_server(host, port):
         logger.info("General error: %s" % e)
         return None
 
-def accept_incoming_connections(server, clients, buffer_size, encoding):
+"""
+accept_incoming_connections: Accepts incoming connections from clients.
+Parameters:
+    server: The server socket.
+    clients: The dictionary of clients (used for managing if needed).
+    buffer_size: The buffer size.
+    encoding: The encoding.
+"""
+
+def accept_incoming_connections(server_socket, clients, buffer_size, encoding):
     while True:
-        client, client_address = server.accept()
-        logger.info("(%s:%s) has connected to the server." % client_address)
-        #client.send(bytes("Please enter your name: ", encoding))
-        clientThread = Thread(target=handle_client, args=(client, client_address, buffer_size, clients, encoding))
-        clientThread.daemon = True
-        clientThread.start()
+        client_socket, client_address = server_socket.accept()
+        clients[client_address] = client_socket
+        client_thread = Thread(target=handle_client, args=(client_socket, client_address, buffer_size, encoding))
+        client_thread.daemon = True
+        client_thread.start()
