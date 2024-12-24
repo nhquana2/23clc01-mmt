@@ -53,7 +53,7 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
 
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-            logger.info(f"Start receiving file {file_name} from {client_address}...")
+            logger.info(f"Start receiving file {os.path.basename(file_path)} from {client_address}...")
             
             with open(file_path, "wb") as f:
                 bytes_read = 0
@@ -64,8 +64,10 @@ def handle_client(client_socket, client_address, buffer_size, encoding):
                     f.write(data)
                     bytes_read += len(data)
                     send_data(client_socket, "OK".encode(encoding))
-            logger.info(f"[+] Received file {file_name} from {client_address} and saved to {UPLOAD_FOLDER}.")
-            send_data(client_socket, f"File {file_name} uploaded successfully.".encode(encoding))
+
+            
+            logger.info(f"[+] Received file {os.path.basename(file_path)} from {client_address} and saved to {UPLOAD_FOLDER}.")
+            send_data(client_socket, f"File {os.path.basename(file_path)} uploaded successfully.".encode(encoding))
 
         elif command == 'DOWNLOAD':
 
